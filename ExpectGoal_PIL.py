@@ -228,3 +228,5 @@ def main_color(j1):
             dominant_color = (r, g, b)
 
     return dominant_color
+
+
