@@ -323,7 +323,13 @@ def read_xml():
                      return int(b.split()[1])
             raise IndexError('曲 not found')
 
-        loc_qu = get_loc_qu(boxes)
+        try:
+            loc_qu = get_loc_qu(boxes)
+        except IndexError:
+            boxes = pytesseract.image_to_boxes(i1.crop((80, rows[0][0], i1.size[0], rows[0][1])), lang='chi_sim',
+                                               config='--psm 7').split(
+                '\n')
+            loc_qu = get_loc_qu(boxes)
         boxes1 = pytesseract.image_to_boxes(i1.crop((loc_qu + 45, rows[0][0], i1.size[0], rows[0][1])), lang='chi_sim', config='--psm 7').split(
             '\n')
 
@@ -551,7 +557,7 @@ def read_xml():
         # i1 = Image.open(fd['张培玲']['GG.JPG'])
         i1 = Image.open(fd['冯海侠']['F.JPG'])
         rows, columns = get_coordinate(i1)
-        test_show(0, 2, i1, rows, columns)
+        test_show(1, 1, i1, rows, columns)
 
     dfn1, error1, tx1 = get_pic(fd, 0, 10)
     dfn2, error2, tx2 = get_pic(fd, 0, 305)
