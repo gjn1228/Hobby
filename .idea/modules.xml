@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../First/.idea/Beike_First.iml" filepath="$PROJECT_DIR$/../First/.idea/Beike_First.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Comic/.idea/Comic.iml" filepath="$PROJECT_DIR$/../Comic/.idea/Comic.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/Hobby.iml" filepath="$PROJECT_DIR$/.idea/Hobby.iml" />
     </modules>
   </component>
