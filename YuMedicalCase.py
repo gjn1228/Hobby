@@ -330,8 +330,6 @@ def read_xml():
                                                config='--psm 7').split(
                 '\n')
             loc_qu = get_loc_qu(boxes)
-        boxes1 = pytesseract.image_to_boxes(i1.crop((loc_qu + 45, rows[0][0], i1.size[0], rows[0][1])), lang='chi_sim', config='--psm 7').split(
-            '\n')
 
         def get_year_columns():
             def get_columns(boxes):
@@ -373,8 +371,19 @@ def read_xml():
             #         break
             #     except TypeError:
             #         break
+            boxes1 = pytesseract.image_to_boxes(i1.crop((loc_qu + 45, rows[0][0], i1.size[0], rows[0][1])),
+                                                lang='chi_sim', config='--psm 7').split(
+                '\n')
 
             loc_2 = get_columns(boxes1) + loc_qu + 45
+            y1 = pytesseract.image_to_string(i1.crop((loc_2, rows[0][0], loc_2 + 110, rows[0][1])),
+                                                lang='chi_sim', config='--psm 7')
+            if y1[:2] != '20' or y1[2] not in ('0', '1', '2') or y1[4] != '-':
+                boxes1 = pytesseract.image_to_boxes(i1.crop((loc_qu + 60, rows[0][0], i1.size[0], rows[0][1])),
+                                                    lang='chi_sim', config='--psm 7').split(
+                    '\n')
+                loc_2 = get_columns(boxes1) + loc_qu + 60
+
             loc_2_list = [loc_2]
             if i1.size[0] - loc_2_list[-1] - 115 < 100:
                 columns = [(loc_left - 5, loc_qu - 5), (loc_2_list[-1] - 5, i1.size[0])]
@@ -389,6 +398,11 @@ def read_xml():
                 interval_2 = i2 + 110
             else:
                 interval_2 = i2 + 115
+            if interval_2 > 150:
+                boxes2 = pytesseract.image_to_boxes(i1.crop((loc_2 + 110, rows[0][0], i1.size[0], rows[0][1])),
+                                                    lang='chi_sim', config='--psm 7').split('\n')
+                i2 = get_columns(boxes2)
+                interval_2 = i2 + 110
 
             while loc_2 + interval_2 < i1.size[0]:
                 loc_2 += interval_2
@@ -461,6 +475,9 @@ def read_xml():
                         di = pytesseract.image_to_string(img, lang='chi_sim', config='--psm 7').replace('(', '').strip()
                         if len(di) != 16:
                             di = pytesseract.image_to_string(img.convert('L'), lang='chi_sim', config='--psm 7').replace('(', '').strip()
+                        if len(di) != 16:
+                            di = pytesseract.image_to_string(img.convert('L'), lang='chi_sim',
+                                                             config='--psm 7 digits_Y')
                     else:
                         if ri == 2 and 'GI' in pic_path:
                             di = pytesseract.image_to_string(img.convert('L'), lang='chi_sim1',
@@ -544,20 +561,65 @@ def read_xml():
         print('Total Time: %s, Total Success: %s' % (tx, last - first - len(errors)))
         return df, errors, tx
 
+    def get_pic2(folder_dic, folder_list):
+        all_df = []
+        errors = []
+        t0 = time.perf_counter()
+        for i, name in enumerate(folder_list):
+            try:
+                start = time.perf_counter()
+                print('Reading %s %s/%s' % (name, i + 1, len(folder_list)))
+                data = read_data(name, folder_dic)
+                dfs = []
+                for d in data:
+                    df = data[d].T
+                    df = df.set_index(df.columns[0]).stack(0).reset_index()
+                    df.columns = ['date', 'key', 'value']
+                    df['name'] = name
+                    df['pic'] = d
+                    dfs.append(df[['name', 'pic', 'date', 'key', 'value']])
+                df = pd.concat(dfs).reset_index(drop=True)
+                df['count_time'] = time.perf_counter() - start
+            except Exception as e:
+                errors.append([name, e, e.args])
+                print('*' * 20)
+                print(name, e, e.args)
+                print('*' * 20)
+                continue
+            all_df.append(df)
+        df = pd.concat(all_df).reset_index(drop=True)
+        df.to_excel('图片数据_200621文件夹_errorfix_%s.xlsx' % time.strftime('%y%m%d%H%M%S'), index=False)
+        tx = time.perf_counter() - t0
+        print('Total Time: %s, Total Success: %s' % (tx, len(folder_list) - len(errors)))
+        return df, errors, tx
+
     def test():
         # data_1 = read_data('白立新', fd)
         # data_1 = read_data('白立新', fd)
         # data_2 = read_data('东方云', fd)
         # data_3 = read_data('高梁清', fd)
         # data_4 = read_data('高剑霞', fd)
-        data_1 = read_data('冯海侠', fd)
+        data_1 = read_data('郝建', fd)
         # i1 = Image.open(fd['陈坤']['X.PNG'])
         # i1 = Image.open(fd['白立新']['ACTH.PNG'])
         # i1 = Image.open(fd['陈晓华']['X.JPG'])
         # i1 = Image.open(fd['张培玲']['GG.JPG'])
-        i1 = Image.open(fd['冯海侠']['F.JPG'])
+        # i1 = Image.open(fd['冯海侠']['F.JPG'])
+        # i1 = Image.open(fd['郝建']['GG.JPG'])
+        # i1 = Image.open(fd['胡亚利']['GG.JPG'])
+        # i1 = Image.open(fd['黄安东']['X.JPG'])
+        i1 = Image.open(fd['李畅']['GI.JPG'])
+        i1 = Image.open(fd['王姝']['GG2.PNG'])
+        i1 = Image.open(fd['肖俊峰']['X2.JPG'])
+        i1 = Image.open(fd['肖俊峰']['A.JPG'])
+        i1 = Image.open(fd['许建芹']['GG.JPG'])
+        i1 = Image.open(fd['余争先']['GI.JPG'])
+        i1 = Image.open(fd['余争先']['X.JPG'])
+        i1 = Image.open(fd['卞敬华']['GG.JPG'])
         rows, columns = get_coordinate(i1)
-        test_show(1, 1, i1, rows, columns)
+        dfx = read_pic(fd['卞敬华']['GG.JPG'])
+        dfx = read_pic(fd['高润娥']['X.JPG'])
+        test_show(0, 2, i1, rows, columns)
 
     dfn1, error1, tx1 = get_pic(fd, 0, 10)
     dfn2, error2, tx2 = get_pic(fd, 0, 305)
@@ -565,3 +627,11 @@ def read_xml():
     dfe.to_excel('ERROR2.xlsx')
     dfn2['date_len'] = dfn2['date'].map(len)
     dfn21 = dfn2[dfn2.date_len != 16]
+
+    e1 = dfe[0].tolist()
+    e2 = dfn21['name'].drop_duplicates().tolist()
+    e_list = list(set(e1 + e2))
+
+    dfn3, error3, tx3 = get_pic2(fd, e_list)
+
+
