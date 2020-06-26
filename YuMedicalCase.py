@@ -9,8 +9,11 @@ import pandas as pd
 import xml.etree.ElementTree as xmlDoc
 import time
 import pypinyin
+import numpy as np
+import xlwings as xw
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
+os.chdir(r'E:\zxy')
 
 # image = Image.open('Yu1.png')
 # code = pytesseract.image_to_string(image)
@@ -320,7 +323,7 @@ def read_xml():
         def get_loc_qu(boxes):
             for b in boxes:
                 if b.split()[0] in ['曲', '线', '图']:
-                     return int(b.split()[1])
+                    return int(b.split()[1])
             raise IndexError('曲 not found')
 
         try:
@@ -377,12 +380,12 @@ def read_xml():
 
             loc_2 = get_columns(boxes1) + loc_qu + 45
             y1 = pytesseract.image_to_string(i1.crop((loc_2, rows[0][0], loc_2 + 110, rows[0][1])),
-                                                lang='chi_sim', config='--psm 7')
+                                             lang='chi_sim', config='--psm 7')
             if y1[:2] != '20' or y1[2] not in ('0', '1', '2') or y1[4] != '-':
-                boxes1 = pytesseract.image_to_boxes(i1.crop((loc_qu + 60, rows[0][0], i1.size[0], rows[0][1])),
+                boxes1 = pytesseract.image_to_boxes(i1.crop((loc_2 + 10, rows[0][0], i1.size[0], rows[0][1])),
                                                     lang='chi_sim', config='--psm 7').split(
                     '\n')
-                loc_2 = get_columns(boxes1) + loc_qu + 60
+                loc_2 += get_columns(boxes1) + 10
 
             loc_2_list = [loc_2]
             if i1.size[0] - loc_2_list[-1] - 115 < 100:
@@ -608,30 +611,193 @@ def read_xml():
         # i1 = Image.open(fd['郝建']['GG.JPG'])
         # i1 = Image.open(fd['胡亚利']['GG.JPG'])
         # i1 = Image.open(fd['黄安东']['X.JPG'])
-        i1 = Image.open(fd['李畅']['GI.JPG'])
-        i1 = Image.open(fd['王姝']['GG2.PNG'])
-        i1 = Image.open(fd['肖俊峰']['X2.JPG'])
-        i1 = Image.open(fd['肖俊峰']['A.JPG'])
-        i1 = Image.open(fd['许建芹']['GG.JPG'])
-        i1 = Image.open(fd['余争先']['GI.JPG'])
-        i1 = Image.open(fd['余争先']['X.JPG'])
-        i1 = Image.open(fd['卞敬华']['GG.JPG'])
+        # i1 = Image.open(fd['李畅']['GI.JPG'])
+        # i1 = Image.open(fd['王姝']['GG2.PNG'])
+        # i1 = Image.open(fd['肖俊峰']['X2.JPG'])
+        # i1 = Image.open(fd['肖俊峰']['A.JPG'])
+        # i1 = Image.open(fd['许建芹']['GG.JPG'])
+        # i1 = Image.open(fd['余争先']['GI.JPG'])
+        # i1 = Image.open(fd['余争先']['X.JPG'])
+        # i1 = Image.open(fd['卞敬华']['GG.JPG'])
+        i1 = Image.open(fd['毛妍丹']['GG3.PNG'])
+
+        # dfx = read_pic(fd['卞敬华']['GG.JPG'])
+        # dfx = read_pic(fd['高润娥']['X.JPG'])
+        # dfx = read_pic(fd['高润娥']['X.JPG'])
         rows, columns = get_coordinate(i1)
-        dfx = read_pic(fd['卞敬华']['GG.JPG'])
-        dfx = read_pic(fd['高润娥']['X.JPG'])
         test_show(0, 2, i1, rows, columns)
 
-    dfn1, error1, tx1 = get_pic(fd, 0, 10)
-    dfn2, error2, tx2 = get_pic(fd, 0, 305)
-    dfe = pd.DataFrame(error2)
-    dfe.to_excel('ERROR2.xlsx')
-    dfn2['date_len'] = dfn2['date'].map(len)
-    dfn21 = dfn2[dfn2.date_len != 16]
+    def data_main():
+        dfn1, error1, tx1 = get_pic(fd, 0, 10)
+        dfn2, error2, tx2 = get_pic(fd, 0, 305)
 
-    e1 = dfe[0].tolist()
-    e2 = dfn21['name'].drop_duplicates().tolist()
-    e_list = list(set(e1 + e2))
+        def error_fix_200626():
+            dfe = pd.DataFrame(error2)
+            dfe.to_excel('ERROR2.xlsx')
+            dfn2['date_len'] = dfn2['date'].map(len)
+            dfn21 = dfn2[dfn2.date_len != 16]
 
-    dfn3, error3, tx3 = get_pic2(fd, e_list)
+            e1 = dfe[0].tolist()
+            e2 = dfn21['name'].drop_duplicates().tolist()
+            e_list = list(set(e1 + e2))
 
+            dfn3, error3, tx3 = get_pic2(fd, e_list)
+            dfn3['date_len'] = dfn3['date'].map(len)
+            dfn31 = dfn3[dfn3.date_len != 16]
+            dfn32 = dfn3[dfn3.name == '毛妍丹']
 
+            dfn4, error4, tx4 = get_pic2(fd, ['毛妍丹', '杨淑琴', '顾爱兰', '李艳君'])
+
+            dfx1 = dfn2[~dfn2.name.isin(e_list + ['刘秀兰', '肖俊峰', '张泽江', '赵忠钰', '尹光辉', '马骏'])][['name', 'date', 'key', 'value', 'pic']]
+            dfx2 = dfn3[~dfn3.name.isin(['毛妍丹', '刘秀兰', '肖俊峰', '张泽江', '赵忠钰', '尹光辉', '马骏'])][['name', 'date', 'key', 'value', 'pic']]
+            dfx3 = dfn4[['name', 'date', 'key', 'value', 'pic']]
+            dfy = pd.concat([dfx1, dfx2, dfx3]).reset_index(drop=True)
+            dfy.to_excel('图片数据_301人_200626.xlsx', index=False)
+
+            import xlwings as xw
+            wb = xw.Book('2013-2019幸兵组肢大患者列表.xlsx')
+            st = wb.sheets[1]
+            u_list = [x for x in st.range((1, 1), (393, 1)).value if x]
+            dfy1 = dfy[~dfy.name.isin(u_list)]
+
+    def read_excel():
+        df1 = pd.read_excel('图片数据_301人_200626.xlsx')
+
+        def rewrite_key(k):
+            k_dic = {
+                '孕柄': '孕酮',
+                '皖柄': '睾酮',
+                '皇柄': '睾酮',
+                '插柄': '睾酮',
+                '年柄': '睾酮',
+                '后柄': '睾酮',
+                '党柄': '睾酮',
+                '重病': '睾酮',
+                '生病': '睾酮',
+            }
+            if len(k) == 2:
+                return k_dic.get(k, k)
+            if '卵泡' in k or '泡激素' in k:
+                return '促卵泡激素'
+            if len(k) == 3 and '二醇' in k:
+                return '雌二醇'
+            if len(k) == 3 and '素' in k:
+                return '泌乳素'
+            if '血总' in k:
+                return '血总皮质醇'
+            k = k.replace('人书', '促').replace('游高', '游离').replace('二', '三').replace('游敲', '游离'). \
+                replace('峭', '肾').replace('肯', '肾').replace('础', '碘').replace('珊', '碘')
+            if k.startswith('游离三'):
+                return '游离三碘甲状腺原氨酸'
+            if k.startswith('类胰'):
+                return '类胰岛素样生长因子'
+            if k.startswith('三'):
+                return '三碘甲状腺原氨酸'
+            if '皮质激素' in k:
+                return '促肾上腺皮质激素'
+            if len(k) == 6 and k.endswith('腺激素'):
+                return '促甲状腺激素'
+            if k == '垂体泌乳素':
+                return '泌乳素'
+            if k.startswith('B人绒毛膜'):
+                return 'B人绒毛膜促性腺激素'
+            if k.startswith('生长') and len(k) <= 4:
+                return '生长激素'
+            return k
+
+        def show_picture(row):
+            r = df1.loc[row]
+            pic_path = fd[r['name']][r['pic']]
+            Image.open(pic_path).show()
+
+        # dfx = df1[df1.key.str.contains('葡萄糖')]
+        # dfx = df1[df1.key.str.contains('皖柄')]
+        # dfx = df1[df1.key.str.contains('皇柄')]
+        # dfx = df1[df1.key1.str.contains('柄')]
+        # dfx = df1[df1.key1.str.contains('病')]
+        # dfx = df1[df1.key1.str.contains('人书')]
+        # dfx = df1[df1.key1.str.contains('游离三')]
+        # dfx = df1[df1.key1.str.contains('垂体泌乳素')]
+        # dfx = df1[df1.key1.str.contains('甲状旁腺素')]
+        # dfx = df1[df1.key1.str.contains('生长浊')]
+        # dfx = df1[df1.key1 == '类胰']
+        # dfx = df1[df1.key1 == '血总F']
+        # dfx = df1[df1.name == '肖勇光']
+
+        df1['key1'] = df1['key'].map(rewrite_key)
+        keys = df1['key1'].value_counts()
+
+        def is_f(str):
+            try:
+                float(str)
+                return 1
+            except ValueError:
+                if str.startswith('>') or str.startswith('<'):
+                    return is_f(str[1:])
+                return 0
+
+        df1['is_f'] = df1['value'].map(is_f)
+        dfx = df1[df1.is_f == 0]
+        dfx1 = df1[df1.value.map(lambda x: len(str(x))) == 1][df1.value != '.']
+
+        def rewrite_value(v):
+            if pd.isna(v):
+                return v
+            v = str(v)
+            while v.endswith('.'):
+                v = v[:-1].strip()
+            if len(v) <= 1:
+                return np.nan
+            if is_f(v) == 0:
+                return np.nan
+            return v
+
+        df1['value1'] = df1.value.map(rewrite_value)
+
+        df1['is_f'] = df1['value1'].map(is_f)
+        # dfx = df1[df1.is_f == 0]
+        # dfx = df1[df1.value1.str.contains('<') | df1.value1.str.contains('>')]
+        df1[['date1', 'time1']] = df1.date.str.split(' ', expand=True)
+        df1['date1'] = pd.to_datetime(df1['date1'].map(lambda x: x.replace('l', '1'))).dt.date
+        # dfx = df1.sort_values(by='date2')
+
+        wb = xw.Book(r'E:\zxy\肢大临床录入数据_200626.xlsx')
+        st = wb.sheets[1]
+        u_list = st.range((3, 4), (303, 4)).value
+        d_list = st.range((3, 11), (303, 11)).value
+        c_list = st.range((3, 2), (303, 2)).value
+        a_list = st.range((3, 6), (303, 6)).value
+        g_list = st.range((3, 5), (303, 5)).value
+        dfu = pd.DataFrame({'name': u_list, 'o_date': d_list, 'code': c_list, 'age': a_list, 'gender': g_list})
+        dfu['code'] = dfu['code'].map(lambda x: str(int(x)) if is_f(x) else x)
+        c_dic = dfu[dfu.name != '刘伟'].set_index('name')['code'].to_dict()
+        c_dic['刘伟（33）'] = dfu[dfu.name == '刘伟'][dfu.age == 33]['code'].iloc[0]
+        c_dic['刘伟（37）'] = dfu[dfu.name == '刘伟'][dfu.age == 37]['code'].iloc[0]
+
+        u_dic = dict(zip([str(int(c)) if is_f(c) else c for c in c_list], d_list))
+        g_dic = dict(zip([str(int(c)) if is_f(c) else c for c in c_list], g_list))
+
+        df1['code'] = df1['name'].map(c_dic)
+        df1['name1'] = df1.name.map(lambda x: {'刘伟（33）': '刘伟小', '刘伟（37）': '刘伟大'}.get(x, x))
+        df1['o_date'] = pd.to_datetime(df1['code'].map(u_dic)).dt.date
+        df1['gender'] = df1['code'].map(g_dic)
+
+        # df1['date_x'] = df1['test_date'] - df1['o_date']
+        dfo = df1[['name1', 'code', 'gender', 'o_date', 'date1', 'time1', 'key1', 'value1',
+                   'pic', 'name', 'date', 'key', 'value']]
+        dfo.columns = ['name', 'code', 'gender', 'op_date', 'test_date', 'test_time', 'key', 'value',
+                       'pic_name', 'name_old', 'date_old', 'key_old', 'value_old']
+        dfo1 = dfo.sort_values(by=['name', 'key', 'test_date', 'test_time']).reset_index(drop=True)
+
+        def get_pure_value(v):
+            try:
+                p = float(v)
+                return p
+            except ValueError:
+                return float(v[1:])
+
+        dfo1['pure_v'] = dfo1['value'].map(get_pure_value)
+        dfo1['date_x'] = (dfo1['test_date'] - dfo1['op_date']).dt.days.astype(int)
+        dfo2 = dfo1[['name', 'code', 'gender', 'op_date', 'date_x', 'test_date', 'test_time', 'key', 'value', 'pure_v',
+                       'pic_name', 'name_old', 'date_old', 'key_old', 'value_old']]
+        dfo2.to_excel('清理后图片数据_301人_200626.xlsx', index=False)
